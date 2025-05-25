@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Link Click Location Tracker</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      margin-bottom: 0.5em;
+      font-weight: 700;
+      font-size: 2.4em;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #info {
+      margin-bottom: 1em;
+      font-size: 1.2em;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 1em 2em;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    #map {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      background: #eee;
+    }
+    footer {
+      margin-top: auto;
+      font-size: 0.9em;
+      opacity: 0.8;
+      user-select: none;
+    }
+  </style>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    integrity="sha256-sA+4bHf8Xq2EnP9J7GiCvnPOn5YPef4k/nZXPIP+0A8="
+    crossorigin=""
+  />
+</head>
+<body>
+  <h1>Link Click Location Tracker</h1>
+  <div id="info">Loading your location...</div>
+  <div id="map"></div>
+  <footer>Powered by IP Geolocation &amp; OpenStreetMap</footer>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-nNR0DfSiir2PJb4PTj30bUEdQ0p3K2zfN0q5K4vQ3hU="
+    crossorigin=""
+  ></script>
+  <script>
+    const info = document.getElementById('info');
+    const mapContainer = document.getElementById('map');
+
+    // Initialize map variable
+    let map;
+
+    // Fetch IP and location data from ipapi.co
+    fetch('https://ipapi.co/json/')
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to get geolocation');
+        return response.json();
+      })
+      .then(data => {
+        /*
+          Sample response keys:
+          ip, city, region, country_name, latitude, longitude, postal, org
+        */
+        const {
+          ip,
+          city,
+          region,
+          country_name,
+          latitude,
+          longitude,
+          postal,
+          org,
+        } = data;
+
+        info.innerHTML = `
+          <b>Your IP:</b> ${ip} <br/>
+          <b>Location:</b> ${city ? city + ', ' : ''} ${region ? region + ', ' : ''}${country_name} <br/>
+          ${postal ? `<b>Postal Code:</b> ${postal} <br/>` : ''}
+          <b>ISP / Org:</b> ${org}
+        `;
+
+        // Initialize the map at user's location
+        map = L.map('map').setView([latitude, longitude], 10);
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '© OpenStreetMap contributors',
+        }).addTo(map);
+
+        // Add a marker with popup
+        L.marker([latitude, longitude])
+          .addTo(map)
+          .bindPopup(`You are here (${city ? city : 'Unknown City'})`)
+          .openPopup();
+
+        // Log location info in console
+        console.log('Visitor Location:', data);
+      })
+      .catch(error => {
+        info.textContent = 'Unable to determine your location.';
+        console.error('Geolocation error:', error);
+      });
+  </script>
+</body>
+</html>
+
